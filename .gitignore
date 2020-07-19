@@ -1,0 +1,6 @@
+# Stack
+.stack-work/
+
+# GHC
+*.hi
+*.o
