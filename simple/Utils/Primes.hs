@@ -3,15 +3,27 @@ module Utils.Primes (
     primeFactors
 ) where
 
-primesUntil :: Int -> [Int]
+import Data.IntSet (IntSet)
+import qualified Data.IntSet as IntSet
 
 dividesAny divisors target = any (\x -> target `mod` x == 0) divisors
 
--- TODO: Use a proper primes sieve instead of trial division (somehow)
-primesUntil x = let
-    rootPrimes = if endTest <= 16 then [2,3,5,7,11,13] else primesUntil endTest
-    in rootPrimes ++ (filter (\x -> not $ dividesAny rootPrimes x) [2..x])
-    where endTest = ceiling $ sqrt $ fromIntegral x
+-- NOTE: Internal method for prime sieve
+eliminatePrimes :: IntSet -> Int -> Int -> IntSet
+eliminatePrimes primeSet start stop
+    | start >= stop = primeSet -- Finished
+    -- Just skip to next number if we know `start` is not prime
+    | start `IntSet.notMember` primeSet =  eliminatePrimes primeSet (start + 1) stop
+    | otherwise = eliminatePrimes filteredPrimeSet (start + 1) stop -- Just continue eliminating
+        where primeSquared = ceiling $ sqrt $ fromIntegral start
+              filteredPrimeSet = primeSet `IntSet.difference` (IntSet.fromDistinctAscList $
+                takeWhile (<=stop) (map (\i -> start ^ 2 + start * i) [0..]))
+
+
+primesUntil :: Int -> [Int]
+
+primesUntil x = filter (\n -> IntSet.member n primeSet) [2..x]
+    where primeSet = eliminatePrimes (IntSet.fromDistinctAscList [2..x]) 2 x
 
 primeFactors :: Int -> [Int]
 primeFactors x = let
