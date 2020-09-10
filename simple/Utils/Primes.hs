@@ -3,6 +3,8 @@ module Utils.Primes (
     primeFactors
 ) where
 
+import Debug.Trace
+
 -- Had trouble figuring out how to avoid creating tons of lists
 --
 -- Based on this wiki page:
@@ -21,4 +23,17 @@ primes = 2 : oddprimes
           | otherwise =  sieve [x | x <- remaining_primes, x `rem` future_test /= 0]
                                 (head remaining_futures^2) remaining_futures
 
-primeFactors target = [p | p <- (takeWhile (<=target) primes), target `rem` p == 0]
+splitFactors :: Int -> [Int] -> [Int]
+splitFactors remaining primes @ (first_prime:remaining_primes)
+    | remaining < first_prime = [] -- No more remaining primes to split
+    | remaining == first_prime = [remaining]  -- One last prime
+    -- Divisible by the target, append it to the list of primes
+    | (remaining `rem` first_prime == 0) = first_prime : (splitFactors
+        (remaining `div` (last $ takeWhile (\multiple -> remaining `rem` multiple == 0) (map (first_prime^) [1..])))
+        remaining_primes)
+    -- Skip this prime, it's not a factor
+    | otherwise = (splitFactors remaining remaining_primes)
+
+
+primeFactors target = splitFactors target (takeWhile (<=target) primes) 
+    where
